@@ -14,6 +14,7 @@ The Alpha Group is a novel algebraic and topological framework proposed to descr
 
 - `Alpha_group_ODE_solution_1.57_radians.py`
 - `phase_lyapunov_solution_1.57_radians.py`
+  
 Simulation script for the dynamic mapping of the Alpha Group matrix \( M(1.57 radians) \).
 
 
@@ -34,6 +35,7 @@ Simulation script for the dynamic mapping of the Alpha Group matrix \( M(1.57 ra
 ## References
 
 -Corrêa, C. S., & De Melo, T. B. (2025). The Alpha Group Dynamic Mapping. ArXiv. https://arxiv.org/abs/2507.18303
+-Correa, C. S., De Melo, T. B., & Custódio, D. M. (2025). The Alpha Group Tensorial Metric. ArXiv: arXiv:2507.16954 [math.DG] https://doi.org/10.47976/RBHM2024v24n4851-57
 
 ## Contact
 
