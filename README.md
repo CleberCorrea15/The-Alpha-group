@@ -35,3 +35,7 @@ Simulation script for the dynamic mapping of the Alpha Group matrix \( M(1.57 ra
 ## Contact
 
 For questions or collaboration, please contact [Cleber Correa](https://github.com/CleberCorrea15).
+
+## ResearchGate Profile
+
+You can find my publications and collaborations at [ResearchGate](https://www.researchgate.net/profile/Cleber-Souza-Correa?ev=hdr_xprf).
