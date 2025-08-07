@@ -9,10 +9,10 @@ The Alpha Group is a novel algebraic and topological framework proposed to descr
 ## Contents
 
 - `Alpha_group_ODE_solution_0_radians.py`  
-  Simulation script for the dynamic mapping of the Alpha Group matrix \( M(\theta) \).
+  Simulation script for the dynamic mapping of the Alpha Group matrix \( M(0 radians) \).
 
 - `Alpha_group_ODE_solution_1.57_radians.py`  
-Simulation script for the dynamic mapping of the Alpha Group matrix \( M(\theta) \).
+Simulation script for the dynamic mapping of the Alpha Group matrix \( M(1.57 radians) \).
 
 ## How to Run
 
