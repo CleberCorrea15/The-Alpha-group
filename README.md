@@ -34,15 +34,15 @@ Simulation script for the dynamic mapping of the Alpha Group matrix \( M(1.57 ra
 
 ## References
 
--Corrêa, C. S., & De Melo, T. B. (2025). The Alpha Group Dynamic Mapping. ArXiv. https://arxiv.org/abs/2507.18303.
+Corrêa, C. S., & De Melo, T. B. (2025). The Alpha Group Dynamic Mapping. ArXiv. https://arxiv.org/abs/2507.18303.
 
--Corrêa, C. S., De Melo, T. B., & Custódio, D. M. (2025). The Alpha Group Tensorial Metric. ArXiv: arXiv:2507.16954 [math.DG] https://doi.org/10.47976/RBHM2024v24n4851-57
+Corrêa, C. S., De Melo, T. B., & Custódio, D. M. (2025). The Alpha Group Tensorial Metric. ArXiv: arXiv:2507.16954 [math.DG] https://doi.org/10.47976/RBHM2024v24n4851-57
 
--CORRÊA, C. S.; DE MELO, T. B.; CUSTÓDIO, D. M. Proposing the Alpha Group. International Journal for Research in Engineering Application & Management (IJREAM), v. 8, n. 5, p. 66-71, 2022. DOI: https://doi.org/10.35291/22454-9150.2022.0421.
+CORRÊA, C. S.; DE MELO, T. B.; CUSTÓDIO, D. M. Proposing the Alpha Group. International Journal for Research in Engineering Application & Management (IJREAM), v. 8, n. 5, p. 66-71, 2022. DOI: https://doi.org/10.35291/22454-9150.2022.0421.
 
--CORRÊA, Cleber Souza; DE MELO, Thiago Braido Nogueira. Multiscale topology and dynamic internal vectorial geometry-alpha group. Studies in Engineering and Exact Sciences, v. 6, n. 1, p. e17403-e17403, 2025. DOI: https://doi.org/10.54021/seesv6n1-042.
+CORRÊA, Cleber Souza; DE MELO, Thiago Braido Nogueira. Multiscale topology and dynamic internal vectorial geometry-alpha group. Studies in Engineering and Exact Sciences, v. 6, n. 1, p. e17403-e17403, 2025. DOI: https://doi.org/10.54021/seesv6n1-042.
 
--CORRÊA, Cleber Souza; DE MELO, Thiago Braido Nogueira. Division as a radial vector relationship–Alpha group. Studies in Engineering and Exact Sciences, v. 6, n. 1, p. e16083-e16083, 2025. DOI: https://doi.org/10.54021/seesv6n1-037. 
+CORRÊA, Cleber Souza; DE MELO, Thiago Braido Nogueira. Division as a radial vector relationship–Alpha group. Studies in Engineering and Exact Sciences, v. 6, n. 1, p. e16083-e16083, 2025. DOI: https://doi.org/10.54021/seesv6n1-037. 
 
 ## Contact
 
