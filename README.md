@@ -44,6 +44,8 @@ CORRÊA, Cleber Souza; DE MELO, Thiago Braido Nogueira. Multiscale topology and 
 
 CORRÊA, Cleber Souza; DE MELO, Thiago Braido Nogueira. Division as a radial vector relationship–Alpha group. Studies in Engineering and Exact Sciences, v. 6, n. 1, p. e16083-e16083, 2025. DOI: https://doi.org/10.54021/seesv6n1-037. 
 
+Souza Correa. Cleber & Nogueira de Melo, T. B. (2025). The Alpha Group 4D Geometry: Symmetric Structures and Topological Transitions (https://github.com/CleberCorrea15/The-Alpha-group). Zenodo. https://doi.org/10.5281/zenodo.16815767
+
 ## Contact
 
 For questions or collaboration, please contact [Cleber Correa](https://github.com/CleberCorrea15).
