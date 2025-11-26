@@ -63,6 +63,9 @@ CORRÊA, Cleber Souza; DE MELO, Thiago Braido Nogueira. Division as a radial vec
 
 Souza Correa, Cleber & Nogueira de Melo, T. B. (2025). The Alpha Group 4D Geometry: Symmetric Structures and Topological Transitions (https://github.com/CleberCorrea15/The-Alpha-group). Zenodo. https://doi.org/10.5281/zenodo.16815767
 
+Cleber Souza Corrêa, Thiago Braido Nogueira de Melo. Topological Differences between Riemann Geometry and the Alpha Group via Graph Methods. 2025. ⟨hal-05281857⟩
+ Zenodo. https://doi.org/10.5281/zenodo.17196204
+
 ## Contact
 
 For questions or collaboration, please contact [Cleber Correa](https://github.com/CleberCorrea15).
