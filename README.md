@@ -49,6 +49,31 @@ The simulation focuses on the **topological transition region** near \( \theta \
 
 3. Use the visualization and analysis scripts to explore the generated data.
 
+4. ## Computational Modules
+
+This repository contains the computational framework developed for the
+Extended Alpha Group.
+
+Current implementations include:
+
+• Matrix representation of the Extended Alpha Group;
+• Construction of the operator M(θ);
+• Frobenius decomposition;
+• Monte Carlo simulations;
+• Spectral analysis;
+• Graph-theoretical analysis;
+• Lie algebra construction;
+• Automatic computation of Lie brackets;
+• Structure constants;
+• Jacobi identity verification;
+• Center computation;
+• Closed subalgebra search;
+• Topological and geometric analysis.
+
+These implementations accompany the scientific publications of the
+Extended Alpha Group and are intended to ensure full computational
+reproducibility.
+
 ## References
 
 Corrêa, C. S., & De Melo, T. B. (2025). The Alpha Group Dynamic Mapping. ArXiv. https://arxiv.org/abs/2507.18303.
