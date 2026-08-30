@@ -63,7 +63,7 @@ max_jacobi_error = np.max(np.abs(jacobi_tensor))
 
 # --- Relatório Final ---
 print("=========================================================================")
-print("=== RELATÓRIO COMPUTACIONAL DE ISOMORFISMO DE LIE: g ≅ R (+) sl(4, R) ===")
+print("=== RELATÓRIO COMPUTACIONAL DA ESTRUTURA DE LIE: g ≅ R (+) sl(4, R) ===")
 print("=========================================================================")
 print(f"1. Traço Nulo de sl(4,R) : Max |Tr(T_i)|          = {max_trace:.2e} -> {'PASSOU' if max_trace < 1e-12 else 'FALHOU'}")
 print(f"2. Independência Linear   : Posto do subespaço T   = {rank_T}/15       -> {'PASSOU' if rank_T == 15 else 'FALHOU'}")
@@ -72,6 +72,7 @@ print(f"4. Fechamento de sl(4,R)  : Erro Máx de Projeção   = {max_closure_err
 print(f"5. Antisimetria [X, Y]    : Erro f_ij^k + f_ji^k   = {antisym_error:.2e} -> {'PASSOU' if antisym_error < 1e-12 else 'FALHOU'}")
 print(f"6. Identidade de Jacobi   : Erro Máx no Tensor Jacobi = {max_jacobi_error:.2e} -> {'PASSOU' if max_jacobi_error < 1e-12 else 'FALHOU'}")
 print("=========================================================================")
-print("CONCLUSÃO MATEMÁTICA: O homomorfismo ϕ([X,Y])=[ϕ(X),ϕ(Y)] foi verificado computacionalmente para a representação construída.") 
-print("A álgebra de 16 geradores é compatível com uma álgebra de Lie isomorfa a R (+) sl(4, R).")
-
+print("CONCLUSÃO MATEMÁTICA: a estrutura de Lie construída apresenta uma direção central")
+print("e um setor traceless de dimensão 15, compatível com R ⊕ sl(4, R).")
+print("Esta relação refere-se à estrutura interna da álgebra de 16 geradores.")
+print("Ela não implica isomorfismo com a álgebra Alpha idealizada de dimensão 4.")
