@@ -138,34 +138,74 @@ def lower_central_dimensions_np(indices, max_steps=20):
     return dimensions
 
 
-def is_solvable_np(indices):
+def derived_series_dimensions_np(indices, max_steps=20):
+    """
+    Computes the derived series exactly at the level of the numerical
+    matrix representation:
+
+        h^(0) = h
+        h^(n+1) = [h^(n), h^(n)]
+
+    Returns the dimensions of the successive derived algebras.
+    Solvability is established iff the series reaches dimension zero.
+    """
     current = [B_np[i] for i in indices]
-    for _ in range(20):
+    dimensions = [len(indices)]
+
+    for _ in range(max_steps):
         brackets = []
+
         for X, Y in combinations(current, 2):
             K = X @ Y - Y @ X
             if np.any(np.abs(K) > 1e-9):
                 brackets.append(K)
 
         if not brackets:
-            return True
+            dimensions.append(0)
+            return dimensions
 
         stacked = np.hstack([M.reshape(16, 1) for M in brackets])
         rank = int(np.linalg.matrix_rank(stacked))
 
+        dimensions.append(rank)
+
+        # Stabilization at a nonzero dimension means the derived
+        # series will not reach zero within this finite-dimensional
+        # representation.
+        if rank == 0:
+            return dimensions
+
+        if rank == dimensions[-2]:
+            return dimensions
+
+        # Select a linearly independent basis of the derived algebra.
         new_mats = []
+        current_rank = 0
+
         for mat in brackets:
             test = new_mats + [mat]
-            if int(np.linalg.matrix_rank(
+            test_rank = int(np.linalg.matrix_rank(
                 np.hstack([M.reshape(16, 1) for M in test])
-            )) > len(new_mats):
+            ))
+
+            if test_rank > current_rank:
                 new_mats.append(mat)
-            if len(new_mats) == rank:
+                current_rank = test_rank
+
+            if current_rank == rank:
                 break
+
         current = new_mats
 
-    return False
+    return dimensions
 
+
+def is_solvable_np(indices):
+    """
+    A Lie algebra is solvable iff its derived series reaches zero.
+    """
+    dims = derived_series_dimensions_np(indices)
+    return dims[-1] == 0
 
 def analyze_subalgebra_fast(item):
     """Executa a análise estrutural da subálgebra."""
@@ -176,28 +216,14 @@ def analyze_subalgebra_fast(item):
     d1_mats = derived_matrices_np(indices)
     d1 = matrix_rank_np(d1_mats)
 
-    # Segunda álgebra derivada
-    if d1 > 0:
-        d1_basis = []
-        for mat in d1_mats:
-            test = d1_basis + [mat]
-            if matrix_rank_np(test) > len(d1_basis):
-                d1_basis.append(mat)
-            if len(d1_basis) == d1:
-                break
-
-        d2_mats = []
-        for X in d1_basis:
-            for Y in d1_basis:
-                K = X @ Y - Y @ X
-                if np.any(np.abs(K) > 1e-9):
-                    d2_mats.append(K)
-        d2 = matrix_rank_np(d2_mats)
-    else:
-        d2 = 0
+    # Derived series:
+    # h^(0)=h, h^(1)=[h,h], h^(2)=[h^(1),h^(1)], ...
+    derived_series = derived_series_dimensions_np(indices)
+    d2 = derived_series[2] if len(derived_series) > 2 else 0
 
     ab = d1 == 0
-    solv = is_solvable_np(indices)
+    solv = derived_series[-1] == 0
+
     lcs = lower_central_dimensions_np(indices)
     nilp = 0 in lcs
 
@@ -212,6 +238,7 @@ def analyze_subalgebra_fast(item):
         "solvable": solv,
         "nilpotent": nilp,
         "lower_central": tuple(lcs),
+        "derived_series": tuple(derived_series),
     }
 
 
@@ -281,7 +308,26 @@ if __name__ == "__main__":
                 f"abelian={r['abelian']} | solvable={r['solvable']} | "
                 f"nilpotent={r['nilpotent']} | "
                 f"generators={r['generators']} | "
-                f"lower_central={r['lower_central']}\n"
+                f"derived_series={r['derived_series']} | "
+            f"lower_central={r['lower_central']}\n"
             )
+
+    # ==============================================================
+    # 16. CONSISTENCY CHECK — COMPLETE 16D ALGEBRA
+    # ==============================================================
+
+    full = next(
+        r for r in records
+        if r["generators"] == tuple(range(1, 17))
+    )
+
+    print("\n" + "=" * 78)
+    print("CONSISTENCY CHECK — COMPLETE 16D LIE ALGEBRA")
+    print("=" * 78)
+    print("dim =", full["dim"])
+    print("center_dim =", full["center_dim"])
+    print("derived_series =", full["derived_series"])
+    print("solvable =", full["solvable"])
+    print("nilpotent =", full["nilpotent"])
 
     print("\nAnálise finalizada e salva em:", outfile)
