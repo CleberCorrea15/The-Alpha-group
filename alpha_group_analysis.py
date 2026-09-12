@@ -1,588 +1,945 @@
-# =============================================================================
-# ALPHA GROUP — ANÁLISE DOS 120 COLCHETES + RELAÇÕES ESPECTRAIS
-# =============================================================================
-#
-# OBJETIVO:
-#   1. Construir os 16 geradores B1,...,B16
-#   2. Calcular os 120 colchetes [Bi,Bj]
-#   3. Separar 24 comutativos e 96 não-comutativos
-#   4. Calcular os autovalores dos 16 geradores
-#   5. Calcular os autovalores dos 96 colchetes não-comutativos
-#   6. Detectar estruturas espectrais complexas
-#   7. Procurar uma possível decomposição:
-#
-#               96 = 64 + 32
-#
-#   IMPORTANTE:
-#   O programa NÃO assume que existam 32 relações espectrais.
-#   Ele testa essa hipótese.
-# =============================================================================
-
-import sympy as sp
 import numpy as np
-from collections import Counter, defaultdict
+from itertools import combinations
+from collections import Counter
 
-np.set_printoptions(precision=8, suppress=True)
+# ============================================================
+# ALPHA GROUP: 120 -> 96 -> ESPECTRAIS GENUÍNOS
+# Teste do papel de B7 na estrutura espectral
+# ============================================================
 
-print("="*80)
-print("ALPHA GROUP — 120 COLCHETES E ESTRUTURA ESPECTRAL")
-print("="*80)
+# Critério numérico:
+# partes imaginárias menores que IMAG_TOL são tratadas como zero.
+# 1e-12 é deliberadamente mais rigoroso que o TOL algébrico.
+TOL = 1e-8
+IMAG_TOL = 1e-8
 
+# --- Base B1 ... B16 (M_4(R)) ---
+B1=np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],float)
+B2=np.array([[0,-1,0,0],[1,0,0,0],[0,0,0,-1],[0,0,1,0]],float)
+B3=np.array([[0,0,-1,0],[0,0,0,-1],[1,0,0,0],[0,1,0,0]],float)
+B4=np.array([[0,0,0,0],[0,0,0,0],[0,0,1,0],[0,0,0,1]],float)
+B5=np.array([[1,0,0,1],[0,1,1,0],[0,-1,0,0],[1,0,0,0]],float)
+B6=np.array([[0,0,0,1],[0,0,-1,0],[0,-1,0,0],[1,0,0,0]],float)
+B7=np.array([[0,0,0,0],[0,0,0,0],[0,0,0,-1],[0,0,1,0]],float)
+B8=np.array([[0,-1,-1,0],[1,0,0,1],[-1,0,0,0],[0,-1,0,0]],float)
+B9=np.array([[0,0,-1,0],[0,0,0,-1],[0,0,0,0],[0,0,0,0]],float)
+B10=np.array([[0,1,0,0],[-1,0,0,0],[1,0,0,1],[0,1,1,0]],float)
+B11=np.array([[0,0,0,0],[0,0,0,0],[0,-1,0,0],[1,0,0,0]],float)
+B12=np.array([[0,1,-1,0],[1,0,0,-1],[0,0,0,1],[0,0,-1,0]],float)
+B13=np.array([[2,0,0,1],[0,0,1,0],[0,-1,-1,0],[1,0,0,1]],float)
+B14=np.array([[1,0,0,0],[0,1,0,0],[0,-1,-1,0],[1,0,0,1]],float)
+B15=np.array([[0,0,0,-1],[0,0,1,0],[0,1,-1,0],[1,0,0,-1]],float)
+B16=np.array([[0,1,1,0],[-1,0,0,-1],[2,0,0,1],[0,0,1,0]],float)
 
-# =============================================================================
-# 1. DEFINIÇÃO DOS 16 GERADORES
-# =============================================================================
+names=[f"B{i}" for i in range(1,17)]
+basis=[B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16]
 
-B = {}
+def comm(A,B):
+    return A@B-B@A
 
-B[1]  = sp.Matrix([
-    [1, 0, 0, 0],
-    [0, 1, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-])
+def decompose(M):
+    X=np.column_stack([A.reshape(-1) for A in basis])
+    c,_,rank,_=np.linalg.lstsq(X,M.reshape(-1),rcond=None)
+    R=sum(c[i]*basis[i] for i in range(16))
+    return c,np.linalg.norm(M-R),rank
 
-B[2]  = sp.Matrix([
-    [0, -1, 0, 0],
-    [1,  0, 0, 0],
-    [0,  0, 0,-1],
-    [0,  0, 1, 0]
-])
-
-B[3]  = sp.Matrix([
-    [0, 0,-1, 0],
-    [0, 0, 0,-1],
-    [1, 0, 0, 0],
-    [0, 1, 0, 0]
-])
-
-B[4]  = sp.Matrix([
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-])
-
-B[5]  = sp.Matrix([
-    [1, 0, 0, 1],
-    [0, 1, 1, 0],
-    [0,-1, 0, 0],
-    [1, 0, 0, 0]
-])
-
-B[6]  = sp.Matrix([
-    [0, 0, 0, 1],
-    [0, 0,-1, 0],
-    [0,-1, 0, 0],
-    [1, 0, 0, 0]
-])
-
-B[7]  = sp.Matrix([
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0,-1],
-    [0, 0, 1, 0]
-])
-
-B[8]  = sp.Matrix([
-    [0,-1,-1, 0],
-    [1, 0, 0, 1],
-    [-1,0, 0, 0],
-    [0,-1, 0, 0]
-])
-
-B[9]  = sp.Matrix([
-    [0, 0,-1, 0],
-    [0, 0, 0,-1],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0]
-])
-
-B[10] = sp.Matrix([
-    [0, 1, 0, 0],
-    [-1,0, 0, 0],
-    [1, 0, 0, 1],
-    [0, 1, 1, 0]
-])
-
-B[11] = sp.Matrix([
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0,-1, 0, 0],
-    [1, 0, 0, 0]
-])
-
-B[12] = sp.Matrix([
-    [0, 1,-1, 0],
-    [1, 0, 0,-1],
-    [0, 0, 0, 1],
-    [0, 0,-1, 0]
-])
-
-B[13] = sp.Matrix([
-    [2, 0, 0, 1],
-    [0, 0, 1, 0],
-    [0,-1,-1, 0],
-    [1, 0, 0, 1]
-])
-
-B[14] = sp.Matrix([
-    [1, 0, 0, 0],
-    [0, 1, 0, 0],
-    [0,-1,-1, 0],
-    [1, 0, 0, 1]
-])
-
-B[15] = sp.Matrix([
-    [0, 0, 0,-1],
-    [0, 0, 1, 0],
-    [0, 1,-1, 0],
-    [1, 0, 0,-1]
-])
-
-B[16] = sp.Matrix([
-    [0, 1, 1, 0],
-    [-1,0, 0,-1],
-    [2, 0, 0, 1],
-    [0, 0, 1, 0]
-])
-
-
-# =============================================================================
-# 2. MATRIZ DA BASE E VERIFICAÇÃO DE RANK
-# =============================================================================
-
-def vec(M):
-    return sp.Matrix(list(M))
-
-M_base = sp.Matrix.hstack(*[vec(B[i]) for i in range(1,17)])
-
-rank = M_base.rank()
-
-print("\n" + "="*80)
-print("1. DIMENSÃO DA BASE")
-print("="*80)
-print(f"Rank dos 16 geradores = {rank}")
-
-if rank == 16:
-    print("✓ Os 16 geradores são linearmente independentes.")
-else:
-    print("⚠ ATENÇÃO: rank diferente de 16.")
-
-
-# Inversa calculada uma única vez
-M_inv = M_base.inv()
-
-
-# =============================================================================
-# 3. FUNÇÕES
-# =============================================================================
-
-def bracket(A, C):
-    """Colchete de Lie [A,C] = AC - CA"""
-    return A*C - C*A
-
-
-def coordinates(M):
-    """Coordenadas de M na base B1,...,B16."""
-    return sp.simplify(M_inv * vec(M))
-
-
-def numerical_eigenvalues(M):
-    """Autovalores numéricos."""
-    A = np.array(M.tolist(), dtype=float)
-    return np.linalg.eigvals(A)
-
-
-def is_complex_eigenvalue(z, tol=1e-8):
-    return abs(np.imag(z)) > tol
-
-
-def conjugate_pair_exists(eigs, tol=1e-7):
+def spectral(M):
     """
-    Verifica se existe pelo menos um par lambda, conjugate(lambda).
-    Para matrizes reais isso é esperado quando há autovalores complexos.
+    Classificação robusta:
+      ZERO
+      REAL_NUMERICO  -> todas as partes imaginárias <= IMAG_TOL
+      COMPLEXO       -> pelo menos uma parte imaginária > IMAG_TOL
     """
-    complex_vals = [z for z in eigs if abs(np.imag(z)) > tol]
-
-    for z in complex_vals:
-        target = np.conjugate(z)
-
-        if any(abs(w-target) < tol for w in complex_vals):
-            return True
-
-    return False
-
-
-def spectral_signature(eigs, tol=1e-7):
-    """
-    Classificação simples do espectro.
-    """
-    real_count = 0
-    complex_count = 0
-
-    for z in eigs:
-        if abs(np.imag(z)) < tol:
-            real_count += 1
-        else:
-            complex_count += 1
-
-    if complex_count == 0:
-        return "REAL"
-
-    if complex_count == 2:
-        return "1 PAR COMPLEXO"
-
-    if complex_count == 4:
-        return "2 PARES COMPLEXOS"
-
-    return f"{complex_count} AUTOVALORES COMPLEXOS"
-
-
-# =============================================================================
-# 4. GERAR OS 120 COLCHETES
-# =============================================================================
-
-print("\n" + "="*80)
-print("2. GERANDO OS 120 COLCHETES")
-print("="*80)
-
-all_brackets = {}
-commutative = {}
-noncommutative = {}
-
-for i in range(1,17):
-    for j in range(i+1,17):
-
-        C = bracket(B[i], B[j])
-
-        key = (i,j)
-
-        all_brackets[key] = C
-
-        if C == sp.zeros(4):
-            commutative[key] = C
-        else:
-            noncommutative[key] = C
-
-
-print(f"Total de pares               = {len(all_brackets)}")
-print(f"Comutativos                  = {len(commutative)}")
-print(f"Não-comutativos              = {len(noncommutative)}")
-
-print("\nVerificação:")
-print(f"{len(commutative)} + {len(noncommutative)} = "
-      f"{len(commutative)+len(noncommutative)}")
-
-if len(commutative) == 24 and len(noncommutative) == 96:
-    print("✓ CONFIRMADO: 24 + 96 = 120")
-else:
-    print("⚠ A distribuição encontrada é diferente.")
-
-
-# =============================================================================
-# 5. LISTAR OS 24 COMUTATIVOS
-# =============================================================================
-
-print("\n" + "="*80)
-print("3. OS 24 COLCHETES COMUTATIVOS")
-print("="*80)
-
-for (i,j) in commutative:
-    print(f"[B{i:02d}, B{j:02d}] = 0")
-
-
-# =============================================================================
-# 6. ESPECTRO DOS 16 GERADORES
-# =============================================================================
-
-print("\n" + "="*80)
-print("4. ESPECTRO DOS 16 GERADORES")
-print("="*80)
-
-generator_spectra = {}
-
-for i in range(1,17):
-
-    eigs = numerical_eigenvalues(B[i])
-    generator_spectra[i] = eigs
-
-    signature = spectral_signature(eigs)
-    conjugate = conjugate_pair_exists(eigs)
-
-    print(f"\nB{i:02d}")
-    print(f"   autovalores = {eigs}")
-    print(f"   classe      = {signature}")
-    print(f"   par conjugado complexo? {conjugate}")
-
-
-# =============================================================================
-# 7. CONTAGEM DOS AUTOVALORES COMPLEXOS DOS 16 GERADORES
-# =============================================================================
-
-complex_eigenvalue_count = 0
-complex_pairs = 0
-
-for i,eigs in generator_spectra.items():
-
-    complex_vals = [
-        z for z in eigs
-        if abs(np.imag(z)) > 1e-8
-    ]
-
-    complex_eigenvalue_count += len(complex_vals)
-
-    if len(complex_vals) >= 2:
-        complex_pairs += len(complex_vals)//2
-
-
-print("\n" + "="*80)
-print("5. CONTAGEM ESPECTRAL DOS GERADORES")
-print("="*80)
-
-print(f"Autovalores complexos encontrados = {complex_eigenvalue_count}")
-print(f"Pares complexos                 = {complex_pairs}")
-
-print("\nIMPORTANTE:")
-print("O número de autovalores complexos NÃO é automaticamente")
-print("o número de relações espectrais entre os colchetes.")
-
-
-# =============================================================================
-# 8. ESPECTRO DOS 96 COLCHETES NÃO-COMUTATIVOS
-# =============================================================================
-
-print("\n" + "="*80)
-print("6. ESPECTRO DOS 96 COLCHETES NÃO-COMUTATIVOS")
-print("="*80)
-
-bracket_spectra = {}
-spectral_brackets = {}
-real_brackets = {}
-
-for (i,j), C in noncommutative.items():
-
-    eigs = numerical_eigenvalues(C)
-
-    bracket_spectra[(i,j)] = eigs
-
-    signature = spectral_signature(eigs)
-    conjugate = conjugate_pair_exists(eigs)
-
-    if conjugate:
-        spectral_brackets[(i,j)] = eigs
-    else:
-        real_brackets[(i,j)] = eigs
-
-    print(f"[B{i:02d}, B{j:02d}]")
-    print(f"    espectro = {eigs}")
-    print(f"    classe   = {signature}")
-    print(f"    espectral = {conjugate}")
-
-
-# =============================================================================
-# 9. CONTAGEM FUNDAMENTAL
-# =============================================================================
-
-print("\n" + "="*80)
-print("7. RESULTADO FUNDAMENTAL DA ANÁLISE ESPECTRAL")
-print("="*80)
-
-N_spectral = len(spectral_brackets)
-N_other = len(real_brackets)
-
-print(f"Não-comutativos totais       = {len(noncommutative)}")
-print(f"Com estrutura espectral      = {N_spectral}")
-print(f"Sem estrutura espectral      = {N_other}")
-
-print("\nTeste da hipótese:")
-print(f"96 = {N_other} + {N_spectral}")
-
-
-if N_spectral == 32:
-
-    print("\n" + "★"*80)
-    print("RESULTADO:")
-    print("✓ FORAM ENCONTRADAS EXATAMENTE 32 RELAÇÕES ESPECTRAIS")
-    print("✓ A HIPÓTESE 96 = 64 + 32 É CONFIRMADA NUMERICAMENTE")
-    print("★"*80)
-
-elif N_spectral < 32:
-
-    print("\nRESULTADO:")
-    print(f"⚠ Foram encontradas apenas {N_spectral} relações espectrais.")
-    print("A hipótese de 32 não é confirmada por este critério.")
-
-else:
-
-    print("\nRESULTADO:")
-    print(f"⚠ Foram encontradas {N_spectral} relações espectrais.")
-    print("O critério utilizado identifica mais de 32.")
-
-
-# =============================================================================
-# 10. LISTA DAS RELAÇÕES ESPECTRAIS
-# =============================================================================
-
-print("\n" + "="*80)
-print("8. RELAÇÕES CLASSIFICADAS COMO ESPECTRAIS")
-print("="*80)
-
-if len(spectral_brackets) == 0:
-
-    print("Nenhuma encontrada.")
-
-else:
-
-    for (i,j), eigs in spectral_brackets.items():
-
-        print(f"\n[B{i:02d}, B{j:02d}]")
-
-        for k,z in enumerate(eigs,1):
-            print(f"    λ{k} = {z}")
-
-
-# =============================================================================
-# 11. AGRUPAMENTO POR PADRÃO ESPECTRAL
-# =============================================================================
-
-print("\n" + "="*80)
-print("9. DISTRIBUIÇÃO DOS PADRÕES ESPECTRAIS")
-print("="*80)
-
-pattern_counter = Counter()
-
-for pair,eigs in bracket_spectra.items():
-
-    pattern = spectral_signature(eigs)
-
-    pattern_counter[pattern] += 1
-
-
-for pattern,count in pattern_counter.items():
-
-    print(f"{pattern:25s} : {count:3d}")
-
-
-# =============================================================================
-# 12. RELAÇÕES ESPECTRAIS POR GERADOR
-# =============================================================================
-
-print("\n" + "="*80)
-print("10. DISTRIBUIÇÃO DAS RELAÇÕES ESPECTRAIS")
-print("="*80)
-
-spectral_by_generator = Counter()
-
-for (i,j) in spectral_brackets:
-
-    spectral_by_generator[i] += 1
-    spectral_by_generator[j] += 1
-
-
-for i in range(1,17):
-
+    if np.linalg.norm(M)<=TOL:
+        return False,"ZERO",np.zeros(4,dtype=complex),0,0,0.0
+
+    ev=np.linalg.eigvals(M)
+    imag_max=float(np.max(np.abs(ev.imag)))
+    is_complex=imag_max>IMAG_TOL
+    cls="COMPLEXO" if is_complex else "REAL_NUMERICO"
+    return is_complex,cls,ev,np.linalg.matrix_rank(M,tol=TOL),max(abs(ev)),imag_max
+
+# ============================================================
+# 1. OS 120 PARES
+# ============================================================
+results=[]
+
+for i,j in combinations(range(16),2):
+    C=comm(basis[i],basis[j])
+    sp,cls,ev,rank,rho,imag_max=spectral(C)
+    c,res,rankbase=decompose(C)
+
+    results.append({
+        "i":i+1,
+        "j":j+1,
+        "pair":f"[B{i+1},B{j+1}]",
+        "C":C,
+        "norm":np.linalg.norm(C),
+        "noncomm":np.linalg.norm(C)>TOL,
+        "spectral":sp,
+        "class":cls,
+        "eig":ev,
+        "rank":rank,
+        "rho":rho,
+        "imag_max":imag_max,
+        "coeff":c,
+        "residual":res,
+        "B7":i==6 or j==6
+    })
+
+commutative=[r for r in results if not r["noncomm"]]
+noncomm=[r for r in results if r["noncomm"]]
+spectral96=[r for r in noncomm if r["spectral"]]
+real96=[r for r in noncomm if not r["spectral"]]
+
+print("="*95)
+print("ALPHA GROUP — 120 -> 96 -> ESPECTRAIS GENUÍNOS")
+print("="*95)
+print(f"120 pares totais              : {len(results)}")
+print(f"24 comutativos               : {len(commutative)}")
+print(f"96 não comutativos           : {len(noncomm)}")
+print(f"Espectrais genuínos          : {len(spectral96)}")
+print(f"Reais após tolerância        : {len(real96)}")
+print(f"Critério |Im(lambda)| >      : {IMAG_TOL:.1e}")
+
+# ============================================================
+# 2. AUDITORIA NUMÉRICA
+# Mostra casos que poderiam ter sido classificados como
+# complexos apenas por ruído de ponto flutuante.
+# ============================================================
+print("\n"+"="*95)
+print("AUDITORIA DA PARTE IMAGINÁRIA")
+print("="*95)
+
+for r in noncomm:
+    if r["imag_max"] <= 1e-8:
+        print(f"{r['pair']:<14} max|Im(lambda)| = {r['imag_max']:.3e}"
+              f"  -> {r['class']}")
+
+# ============================================================
+# 3. OS ESPECTRAIS GENUÍNOS
+# ============================================================
+print("\n"+"="*95)
+print(f"COLCHETES ESPECTRAIS GENUÍNOS ({len(spectral96)})")
+print("="*95)
+
+for k,r in enumerate(spectral96,1):
     print(
-        f"B{i:02d}: "
-        f"{spectral_by_generator[i]:3d} ocorrências em relações espectrais"
+        f"{k:2d}. {r['pair']:<14}"
+        f" ||C||={r['norm']:.6e}"
+        f" rank={r['rank']}"
+        f" rho={r['rho']:.6e}"
+        f" max|Im|={r['imag_max']:.6e}"
+        f" B7={'SIM' if r['B7'] else 'NAO'}"
+    )
+
+# ============================================================
+# 4. PAPEL DE B7
+# ============================================================
+b7_noncomm=[r for r in noncomm if r["B7"]]
+b7_spec=[r for r in spectral96 if r["B7"]]
+b7_real=[r for r in real96 if r["B7"]]
+
+print("\n"+"="*95)
+print("PAPEL DE B7")
+print("="*95)
+print(f"Pares não comutativos envolvendo B7 : {len(b7_noncomm)}")
+print(f"Espectrais genuínos                  : {len(b7_spec)}")
+print(f"Reais após tolerância                : {len(b7_real)}")
+
+p_b7=len(b7_spec)/max(len(b7_noncomm),1)
+p_global=len(spectral96)/max(len(noncomm),1)
+enrichment=p_b7/p_global if p_global else np.nan
+
+print(f"\nTaxa espectral dos pares com B7      : {100*p_b7:.2f}%")
+print(f"Taxa espectral global dos 96         : {100*p_global:.2f}%")
+print(f"Fator de enriquecimento de B7        : {enrichment:.4f}")
+
+print("\nColchetes espectrais envolvendo B7:")
+for r in b7_spec:
+    print(f"  {r['pair']}  eig={np.round(r['eig'],8)}")
+
+# ============================================================
+# 5. GRAU NA REDE ESPECTRAL
+# ============================================================
+degree=Counter()
+
+for r in spectral96:
+    degree[f"B{r['i']}"]+=1
+    degree[f"B{r['j']}"]+=1
+
+print("\n"+"="*95)
+print("GRAU DOS GERADORES NA REDE ESPECTRAL")
+print("="*95)
+
+for n in names:
+    print(f"{n:4s}: {degree[n]:2d}" + ("  <-- B7" if n=="B7" else ""))
+
+# ============================================================
+# 6. AD_B7
+# ============================================================
+Aad=np.zeros((16,16))
+
+for j in range(16):
+    C=comm(B7,basis[j])
+    c,_,_=decompose(C)
+    Aad[:,j]=c
+
+print("\n"+"="*95)
+print("AÇÃO ADJUNTA ad_B7")
+print("="*95)
+print(np.round(Aad,4))
+
+rank_ad=np.linalg.matrix_rank(Aad,tol=TOL)
+
+print(f"\nrank(ad_B7) = {rank_ad}")
+print(f"nullidade   = {16-rank_ad}")
+print("espectro de ad_B7:")
+print(np.round(np.linalg.eigvals(Aad),10))
+
+# ============================================================
+# 7. GERADORES ATINGIDOS POR ad_B7
+# ============================================================
+output=Counter()
+
+for j in range(16):
+    c,_,_=decompose(comm(B7,basis[j]))
+    for k,x in enumerate(c):
+        if abs(x)>TOL:
+            output[f"B{k+1}"]+=1
+
+g32=set()
+for r in spectral96:
+    g32.add(f"B{r['i']}")
+    g32.add(f"B{r['j']}")
+
+gB7=set(output)
+inter=g32 & gB7
+
+print("\n"+"="*95)
+print("IMAGEM DE ad_B7 x REDE ESPECTRAL")
+print("="*95)
+print("Geradores nos colchetes espectrais:")
+print(sorted(g32,key=lambda x:int(x[1:])))
+print("\nGeradores atingidos por B7:")
+print(sorted(gB7,key=lambda x:int(x[1:])))
+print("\nInterseção:")
+print(sorted(inter,key=lambda x:int(x[1:])))
+print(f"\nInterseção = {len(inter)} de {len(g32)} geradores")
+
+# ============================================================
+# 8. CONCLUSÃO AUTOMÁTICA
+# ============================================================
+print("\n"+"="*95)
+print("DIAGNÓSTICO")
+print("="*95)
+
+print(f"""
+Com o critério numérico IMAG_TOL = {IMAG_TOL:.1e}, a classificação
+espectral foi recalculada eliminando partes imaginárias compatíveis
+com erro de ponto flutuante.
+
+A hierarquia obtida é:
+
+    120 pares
+       |
+       +-- 24 comutativos
+       |
+       +-- 96 não comutativos
+                |
+                +-- {len(spectral96)} espectrais genuínos
+                |
+                +-- {len(real96)} reais após tolerância
+
+A hipótese sobre B7 deve ser avaliada agora usando SOMENTE os
+{len(spectral96)} colchetes espectrais genuínos.
+
+Atenção:
+a presença de autovalores complexos no colchete é uma propriedade
+do operador [Bi,Bj]. Ela não implica, por si só, que B7 seja uma
+ponte estrutural-espectral.
+
+O teste mais forte é a combinação de:
+  1. presença de B7 nos colchetes espectrais;
+  2. grau de B7 na rede espectral;
+  3. estrutura de ad_B7;
+  4. sobreposição entre Im(ad_B7) e os geradores da rede espectral;
+  5. estabilidade dessas relações sob mudança de tolerância.
+""")
+
+np.save("A_adB7.npy",Aad)
+
+print("Matriz ad_B7 salva em: A_adB7.npy")
+print("="*95)
+
+from collections import defaultdict
+
+# Agrupamento por Assinatura Espectral Normalizada
+familias = defaultdict(list)
+
+for r in spectral96:
+    C = r["C"]
+    norma = np.linalg.norm(C)
+
+    # 1. Normaliza a matriz para ignorar escala de amplitude
+    C_norm = C / norma
+
+    # 2. Obtém autovalores normalizados e ordena para criar uma chave única
+    eigvals = np.linalg.eigvals(C_norm)
+
+    # Arredonda partes real e imaginária para absorver ruído de float
+    eig_sorted = np.sort_complex(eigvals)
+    chave_espectral = tuple(np.round(eig_sorted, 4))
+
+    familias[chave_espectral].append({
+        "pair": r["pair"],
+        "norma": norma,
+        "B7": r["B7"]
+    })
+
+print("="*95)
+print(f"REDUÇÃO DOS 42 COLCHETES PARA {len(familias)} FAMÍLIAS DE EQUIVALÊNCIA")
+print("="*95)
+
+for idx, (espectro, membros) in enumerate(familias.items(), 1):
+    pares_str = ", ".join([m["pair"] for m in membros])
+    tem_b7 = any(m["B7"] for m in membros)
+    print(f"\nFamília {idx} [{len(membros)} pares] {'(Envolve B7)' if tem_b7 else ''}:")
+    print(f"  Pares aglutinados : {pares_str}")
+    print(f"  Espectro Base (λ) : {espectro}")
+
+# ============================================================
+# 9. ANÁLISE COMPLEMENTAR:
+#    SEMELHANTES, SIMILARES E FAMÍLIAS ESTRUTURAIS
+# ============================================================
+
+from collections import defaultdict
+
+# ------------------------------------------------------------
+# 9.1 Funções auxiliares
+# ------------------------------------------------------------
+
+def limpar_vetor(c, tol=1e-8):
+    """
+    Elimina resíduos numéricos.
+    """
+    c = np.asarray(c, dtype=float).copy()
+    c[np.abs(c) < tol] = 0.0
+    return c
+
+
+def suporte(c, tol=1e-8):
+    """
+    Geradores efetivamente presentes no colchete.
+    """
+    c = limpar_vetor(c, tol)
+    return tuple(
+        i+1 for i, x in enumerate(c)
+        if abs(x) > tol
     )
 
 
-# =============================================================================
-# 13. MATRIZ DE INCIDÊNCIA DOS 96 NÃO-COMUTATIVOS
-# =============================================================================
+def vetor_canonico(c, tol=1e-8):
+    """
+    Normaliza pela maior componente em módulo e
+    escolhe uma orientação canônica.
 
-print("\n" + "="*80)
-print("11. MATRIZ DE INCIDÊNCIA ESPECTRAL")
-print("="*80)
+    Assim:
+        c
+        -c
+        2c
+        -3c
 
-incidence = np.zeros((16,16), dtype=int)
+    possuem a mesma assinatura canônica.
+    """
 
-for (i,j) in noncommutative:
+    c = limpar_vetor(c, tol)
 
-    if (i,j) in spectral_brackets:
+    m = np.max(np.abs(c))
 
-        incidence[i-1,j-1] = 1
-        incidence[j-1,i-1] = 1
+    if m <= tol:
+        return np.zeros_like(c)
 
+    c = c / m
 
-print("\n1 = relação espectral")
-print("0 = relação não espectral\n")
+    # primeira componente não nula positiva
+    for x in c:
+        if abs(x) > tol:
+            if x < 0:
+                c = -c
+            break
 
-print("      " + " ".join(f"B{i:02d}" for i in range(1,17)))
-
-for i in range(16):
-
-    row = " ".join(str(x) for x in incidence[i])
-
-    print(f"B{i+1:02d}   {row}")
-
-
-# =============================================================================
-# 14. VERIFICAÇÃO DA ANTICOMUTATIVIDADE
-# =============================================================================
-
-print("\n" + "="*80)
-print("12. TESTE DE ANTICOMUTATIVIDADE")
-print("="*80)
-
-fail_anti = 0
-tests_anti = 0
-
-for i in range(1,17):
-
-    for j in range(1,17):
-
-        lhs = bracket(B[i],B[j])
-        rhs = -bracket(B[j],B[i])
-
-        tests_anti += 1
-
-        if lhs != rhs:
-            fail_anti += 1
+    return c
 
 
-print(f"Testes realizados = {tests_anti}")
-print(f"Falhas            = {fail_anti}")
+def sao_iguais(c1, c2, tol=1e-8):
+    """
+    Igualdade algébrica/numerical dos vetores.
+    """
+    return np.allclose(
+        limpar_vetor(c1, tol),
+        limpar_vetor(c2, tol),
+        atol=tol,
+        rtol=tol
+    )
 
-if fail_anti == 0:
-    print("✓ Anticomutatividade confirmada.")
+
+def sao_proporcionais(c1, c2, tol=1e-8):
+    """
+    Verifica se dois vetores são proporcionais,
+    incluindo mudança global de sinal.
+    """
+
+    a = limpar_vetor(c1, tol)
+    b = limpar_vetor(c2, tol)
+
+    na = np.linalg.norm(a)
+    nb = np.linalg.norm(b)
+
+    if na <= tol or nb <= tol:
+        return False
+
+    a = a / na
+    b = b / nb
+
+    return abs(abs(np.dot(a,b)) - 1.0) <= 1e-6
 
 
-# =============================================================================
-# 15. RESUMO FINAL
-# =============================================================================
+def sao_similares_estruturais(c1, c2, tol=1e-8):
+    """
+    Similaridade estrutural.
 
-print("\n" + "="*80)
-print("13. RESUMO FINAL")
-print("="*80)
+    Exige:
+      1. mesmo suporte;
+      2. mesma proporção relativa entre os coeficientes.
 
-print("""
-ESTRUTURA DOS 120 PARES
-------------------------
-Total de pares              : 120
-Comutativos                  : 24
-Não-comutativos              : 96
+    A escala global e o sinal global são ignorados.
+    """
 
-ANÁLISE ESPECTRAL
------------------
-Relações espectrais          : {}
-Relações restantes           : {}
+    if suporte(c1, tol) != suporte(c2, tol):
+        return False
 
-TESTE DA DECOMPOSIÇÃO
----------------------
-96 = {} + {}
+    a = vetor_canonico(c1, tol)
+    b = vetor_canonico(c2, tol)
 
-HIPÓTESE ORIGINAL
------------------
-96 = 64 + 32
-""".format(
-    N_spectral,
-    N_other,
-    N_other,
-    N_spectral
-))
+    return np.allclose(
+        a, b,
+        atol=1e-6,
+        rtol=1e-6
+    )
 
-print("="*80)
-print("FIM DA ANÁLISE")
-print("="*80)
+
+# ------------------------------------------------------------
+# 9.2 SEMELHANTES EXATOS
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("SEMELHANTES EXATOS — MESMO VETOR NA BASE")
+print("="*95)
+
+semelhantes_exatos = []
+
+usados = set()
+
+for i, r in enumerate(noncomm):
+
+    if i in usados:
+        continue
+
+    grupo = [r]
+    usados.add(i)
+
+    for j in range(i+1, len(noncomm)):
+
+        if j in usados:
+            continue
+
+        s = noncomm[j]
+
+        if sao_iguais(
+            r["coeff"],
+            s["coeff"]
+        ):
+            grupo.append(s)
+            usados.add(j)
+
+    if len(grupo) > 1:
+        semelhantes_exatos.append(grupo)
+
+
+print(
+    f"Grupos de semelhantes exatos: "
+    f"{len(semelhantes_exatos)}"
+)
+
+for k, grupo in enumerate(
+    semelhantes_exatos, 1
+):
+
+    print(
+        f"\nSE{k:02d} "
+        f"[{len(grupo)} relações]"
+    )
+
+    for r in grupo:
+        print(
+            f"  {r['pair']:<14}"
+            f" -> "
+            f"{np.round(r['coeff'],4)}"
+        )
+
+
+# ------------------------------------------------------------
+# 9.3 SEMELHANTES POR PROPORCIONALIDADE
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("SEMELHANTES POR PROPORCIONALIDADE")
+print("="*95)
+
+semelhantes_proporcionais = []
+
+usados = set()
+
+for i, r in enumerate(noncomm):
+
+    if i in usados:
+        continue
+
+    grupo = [r]
+    usados.add(i)
+
+    for j in range(i+1, len(noncomm)):
+
+        if j in usados:
+            continue
+
+        s = noncomm[j]
+
+        if sao_proporcionais(
+            r["coeff"],
+            s["coeff"]
+        ):
+            grupo.append(s)
+            usados.add(j)
+
+    if len(grupo) > 1:
+        semelhantes_proporcionais.append(grupo)
+
+
+print(
+    f"Grupos proporcionais: "
+    f"{len(semelhantes_proporcionais)}"
+)
+
+for k, grupo in enumerate(
+    semelhantes_proporcionais, 1
+):
+
+    print(
+        f"\nSP{k:02d} "
+        f"[{len(grupo)} relações]"
+    )
+
+    for r in grupo:
+
+        print(
+            f"  {r['pair']:<14}"
+            f" suporte={suporte(r['coeff'])}"
+        )
+
+
+# ------------------------------------------------------------
+# 9.4 SIMILARES ESTRUTURAIS
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("SIMILARES ESTRUTURAIS")
+print("="*95)
+
+similares_estruturais = []
+
+usados = set()
+
+for i, r in enumerate(noncomm):
+
+    if i in usados:
+        continue
+
+    grupo = [r]
+    usados.add(i)
+
+    for j in range(i+1, len(noncomm)):
+
+        if j in usados:
+            continue
+
+        s = noncomm[j]
+
+        if sao_similares_estruturais(
+            r["coeff"],
+            s["coeff"]
+        ):
+            grupo.append(s)
+            usados.add(j)
+
+    if len(grupo) > 1:
+        similares_estruturais.append(grupo)
+
+
+print(
+    f"Grupos de similares estruturais: "
+    f"{len(similares_estruturais)}"
+)
+
+for k, grupo in enumerate(
+    similares_estruturais, 1
+):
+
+    print(
+        f"\nSIM{k:02d} "
+        f"[{len(grupo)} relações]"
+    )
+
+    for r in grupo:
+
+        print(
+            f"  {r['pair']:<14}"
+            f" suporte={suporte(r['coeff'])}"
+        )
+
+    print(
+        "  assinatura ="
+    )
+
+    print(
+        " ",
+        vetor_canonico(
+            grupo[0]["coeff"]
+        )
+    )
+
+
+# ------------------------------------------------------------
+# 9.5 ASSINATURA ESTRUTURAL DE CADA COLCHETE
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("ASSINATURAS ESTRUTURAIS DOS 96 COLCHETES")
+print("="*95)
+
+assinaturas = defaultdict(list)
+
+for r in noncomm:
+
+    assinatura = tuple(
+        np.round(
+            vetor_canonico(
+                r["coeff"]
+            ),
+            8
+        )
+    )
+
+    assinaturas[assinatura].append(r)
+
+
+print(
+    f"Total de assinaturas estruturais: "
+    f"{len(assinaturas)}"
+)
+
+for k, (assinatura, grupo) in enumerate(
+    assinaturas.items(), 1
+):
+
+    print(
+        f"\nC{k:02d} "
+        f"[{len(grupo)} relações]"
+    )
+
+    print(
+        "  Relações:"
+    )
+
+    for r in grupo:
+
+        print(
+            f"    {r['pair']}"
+        )
+
+    print(
+        "  Assinatura:"
+    )
+
+    print(
+        "   ",
+        assinatura
+    )
+
+
+# ------------------------------------------------------------
+# 9.6 COMPARAÇÃO:
+#     FAMÍLIAS ESPECTRAIS x ESTRUTURA ALGÉBRICA
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("COMPARAÇÃO — ESPECTRAL x ESTRUTURAL")
+print("="*95)
+
+# Dicionário par -> família espectral
+familia_espectral = {}
+
+for fid, (espectro, membros) in enumerate(
+    familias.items(), 1
+):
+
+    for m in membros:
+
+        familia_espectral[
+            m["pair"]
+        ] = fid
+
+
+# Dicionário par -> assinatura estrutural
+familia_estrutural = {}
+
+for sid, (assinatura, grupo) in enumerate(
+    assinaturas.items(), 1
+):
+
+    for r in grupo:
+
+        familia_estrutural[
+            r["pair"]
+        ] = sid
+
+
+for r in spectral96:
+
+    print(
+        f"{r['pair']:<14}"
+        f" -> espectral E{familia_espectral[r['pair']]:02d}"
+        f" -> estrutural C{familia_estrutural[r['pair']]:02d}"
+        f" -> "
+        f"{'B7' if r['B7'] else '--'}"
+    )
+
+
+# ------------------------------------------------------------
+# 9.7 MATRIZ DE INTERSEÇÃO
+#     FAMÍLIAS ESPECTRAIS x ESTRUTURAIS
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("INTERSEÇÃO ENTRE FAMÍLIAS ESPECTRAIS E ESTRUTURAIS")
+print("="*95)
+
+intersecao = defaultdict(int)
+
+for r in spectral96:
+
+    e = familia_espectral[
+        r["pair"]
+    ]
+
+    s = familia_estrutural[
+        r["pair"]
+    ]
+
+    intersecao[(e,s)] += 1
+
+
+for (e,s),n in sorted(
+    intersecao.items()
+):
+
+    print(
+        f"E{e:02d} x C{s:02d}"
+        f" -> {n} relações"
+    )
+
+
+# ------------------------------------------------------------
+# 9.8 DISTRIBUIÇÃO DAS 44 RELAÇÕES
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("DISTRIBUIÇÃO DAS 44 RELAÇÕES ESPECTRAIS")
+print("="*95)
+
+distribuicao = Counter()
+
+for r in spectral96:
+
+    e = familia_espectral[
+        r["pair"]
+    ]
+
+    s = familia_estrutural[
+        r["pair"]
+    ]
+
+    distribuicao[
+        (e,s)
+    ] += 1
+
+
+for (e,s),n in sorted(
+    distribuicao.items()
+):
+
+    print(
+        f"Família espectral E{e:02d}"
+        f" / estrutural C{s:02d}"
+        f" : {n}"
+    )
+
+
+# ------------------------------------------------------------
+# 9.9 B7 NAS FAMÍLIAS
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("B7 — POSIÇÃO NAS FAMÍLIAS")
+print("="*95)
+
+for r in b7_spec:
+
+    print(
+        f"{r['pair']:<14}"
+        f" -> E{familia_espectral[r['pair']]:02d}"
+        f" / C{familia_estrutural[r['pair']]:02d}"
+    )
+
+
+# ------------------------------------------------------------
+# 9.10 BUSCA DO NÚMERO 44
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("BUSCA DO NÚMERO 44")
+print("="*95)
+
+print(
+    f"Colchetes não comutativos : {len(noncomm)}"
+)
+
+print(
+    f"Colchetes espectrais      : {len(spectral96)}"
+)
+
+print(
+    f"Famílias espectrais       : {len(familias)}"
+)
+
+print(
+    f"Assinaturas estruturais   : {len(assinaturas)}"
+)
+
+print(
+    f"Semelhantes exatos        : "
+    f"{len(semelhantes_exatos)} grupos"
+)
+
+print(
+    f"Proporcionais             : "
+    f"{len(semelhantes_proporcionais)} grupos"
+)
+
+print(
+    f"Similares estruturais     : "
+    f"{len(similares_estruturais)} grupos"
+)
+
+
+if len(assinaturas) == 44:
+
+    print(
+        "\n*** RESULTADO ESPECIAL ***"
+    )
+
+    print(
+        "O número 44 emerge naturalmente "
+        "como número de assinaturas estruturais."
+    )
+
+else:
+
+    print(
+        "\nO número 44 não foi imposto."
+    )
+
+    print(
+        f"O número encontrado foi "
+        f"{len(assinaturas)}."
+    )
+
+
+# ------------------------------------------------------------
+# 9.11 RELATÓRIO CONCEITUAL
+# ------------------------------------------------------------
+
+print("\n" + "="*95)
+print("SÍNTESE ESTRUTURAL")
+print("="*95)
+
+print(
+    f"""
+A análise foi organizada em três níveis:
+
+1. ESPECTRAL
+   {len(spectral96)} colchetes apresentam espectro complexo.
+
+2. SEMELHANÇA ALGÉBRICA
+   Colchetes podem produzir exatamente o mesmo vetor
+   na base B1,...,B16 ou vetores proporcionais.
+
+3. SIMILARIDADE ESTRUTURAL
+   Colchetes podem possuir o mesmo suporte e a mesma
+   estrutura relativa de coeficientes.
+
+Portanto:
+
+     120 pares
+         |
+         +-- 24 comutativos
+         |
+         +-- 96 não comutativos
+                  |
+                  +-- {len(spectral96)} espectrais
+                  |
+                  +-- {len(familias)} famílias espectrais
+                  |
+                  +-- {len(assinaturas)} assinaturas estruturais
+
+O número 44 é tratado como RESULTADO A SER DESCOBERTO,
+e não como hipótese imposta ao algoritmo.
+"""
+)
+
+
+# ------------------------------------------------------------
+# 9.12 SALVAMENTO DOS RESULTADOS
+# ------------------------------------------------------------
+
+np.save(
+    "alpha_structural_signatures.npy",
+    np.array([
+        vetor_canonico(r["coeff"])
+        for r in noncomm
+    ])
+)
+
+print(
+    "\nAssinaturas estruturais salvas em:"
+)
+
+print(
+    "alpha_structural_signatures.npy"
+)
+
+print("="*95)
+print("FIM DA ANÁLISE COMPLEMENTAR")
+print("="*95)
+
