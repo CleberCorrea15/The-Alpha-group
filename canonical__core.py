@@ -8,7 +8,7 @@ print("MOINHO 6.2 — NÚCLEO CANÔNICO DO ESPAÇO")
 print("=" * 78)
 
 # ============================================================
-# 1. COLE AQUI EXATAMENTE AS 16 MATRIZES DO MOINHO 6.1
+# 1.  AS 16 MATRIZES 
 # ============================================================
 
 B = [
